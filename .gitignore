@@ -3,3 +3,5 @@ fixtures
 __pycache__/
 .pytest_cache/
 .venv/
+scratch/ocr/results/
+scratch/ocr/venv

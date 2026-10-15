@@ -36,3 +36,12 @@ Tests: `docker compose run --rm --no-deps api pytest`
 
 The `api/Dockerfile` has a `dev` target (used by compose)
 and a default `prod` target (non-root, runs migrations then uvicorn) for ECR + Fargate.
+
+## Image requirements (for the mobile app)
+
+The service does no resizing: it expects the client to send an image ready for OCR.
+
+- **Format:** PNG only (HEIC/JPEG from the phone camera must be converted).
+- **Size:** resize to about **750px wide** before upload. Empirically, OCR (easyocr) works well at
+  750px and starts breaking at 500px; full-resolution phone photos (4000-5700px) are several times
+  slower for no gain.
