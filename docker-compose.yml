@@ -1,0 +1,53 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: comics
+      POSTGRES_PASSWORD: comics
+      POSTGRES_DB: comics
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U comics -d comics"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  s3:
+    image: adobe/s3mock:latest   # local S3-compatible fake (MinIO no longer publishes images)
+    environment:
+      COM_ADOBE_TESTING_S3MOCK_STORE_INITIAL_BUCKETS: comics
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:9090/ >/dev/null || exit 1"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+
+  api:
+    build:
+      context: ./api
+      target: dev
+    environment:
+      DATABASE_URL: postgresql+psycopg://comics:comics@db:5432/comics
+      S3_BUCKET: comics
+      S3_ENDPOINT_URL: http://s3:9090
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      FAKE_PROCESSING_SECONDS: "5"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      s3:
+        condition: service_healthy
+    volumes:
+      - ./api:/srv   # hot reload in dev
+    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+volumes:
+  db-data:

@@ -1,0 +1,5 @@
+.DS_Store
+fixtures
+__pycache__/
+.pytest_cache/
+.venv/
